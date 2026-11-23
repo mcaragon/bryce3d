@@ -7,7 +7,7 @@ RUN dpkg --add-architecture i386 && \
     add-pkg \
         wine wine32 wine64 \
         p7zip-full unzip genisoimage \
-        x11-utils fonts-liberation
+        x11-utils fonts-liberation procps
 
 COPY rootfs/ /
 

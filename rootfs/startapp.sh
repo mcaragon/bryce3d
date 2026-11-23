@@ -75,8 +75,12 @@ prepare_wine() {
         log "Creating Wine prefix (first run, takes a minute) ..."
         # WINEDLLOVERRIDES (set above) stops Wine popping up a blocking dialog
         # offering to download Mono/Gecko, which Bryce doesn't need.
-        timeout 300 wine wineboot -i 2>&1 | tail -5
-        timeout 120 "$WINESERVER" -w
+        WINEDEBUG=err+all,fixme-all timeout 300 wine wineboot -i >/config/wineboot.log 2>&1
+        log "wineboot exited with status $? (output below)"
+        tail -20 /config/wineboot.log
+        # Leftover helper processes (explorer, services) can keep wineserver
+        # alive; give them a minute, then shut it down cleanly.
+        timeout 60 "$WINESERVER" -w || "$WINESERVER" -k
         log "Wine prefix ready."
         # Windows 95-era app: report Windows 98.
         wine reg add 'HKCU\Software\Wine' /v Version /d win98 /f >/dev/null 2>&1

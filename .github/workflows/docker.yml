@@ -32,12 +32,14 @@ jobs:
           genisoimage -quiet -V BRYCE3D -o storage/Bryce3DCD.iso cd
           chmod -R a+rwX storage
           docker run -d --name b3d -p 5800:5800 -v "$PWD/storage:/storage" bryce3d:ci
-          for i in $(seq 1 90); do
+          for i in $(seq 1 240); do
             docker logs b3d 2>&1 | grep -q "running installer" && break
             sleep 2
           done
-          docker logs b3d 2>&1 | tail -40
-          docker exec b3d ps -ef || true
+          docker logs b3d 2>&1 | grep -v '^\[supervisor\|^\[xvnc' | tail -60
+          docker exec b3d ps -eo pid,etime,args || true
+          docker exec b3d sh -c 'DISPLAY=:0 xwininfo -root -tree | grep -v "has no name" | head -40' || true
+          docker exec b3d sh -c 'cat /config/wineboot.log' || true
           docker logs b3d 2>&1 | grep -q "running installer"
           curl -fsS -o /dev/null http://localhost:5800/
           docker exec b3d sh -c 'cat /config/cdrom/.windows-label; ls -la /config/wine/dosdevices/'
