@@ -92,6 +92,9 @@ prepare_wine() {
     ln -s "$STORAGE" "$WINEPREFIX/dosdevices/e:"
     wine reg add 'HKLM\Software\Wine\Drives' /v 'd:' /d cdrom /f >/dev/null 2>&1
     wine reg add 'HKLM\Software\Wine\Drives' /v 'e:' /d hd /f >/dev/null 2>&1
+    # Hand keyboard focus to windows the simple way; Wine's default
+    # (WM_TAKE_FOCUS) can leave dialogs unable to receive input.
+    wine reg add 'HKCU\Software\Wine\X11 Driver' /v UseTakeFocus /d N /f >/dev/null 2>&1
     wsw
 }
 

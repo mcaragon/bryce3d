@@ -46,6 +46,19 @@ jobs:
           curl -fsS -o /dev/null http://localhost:5800/
           docker exec b3d sh -c 'cat /config/cdrom/.windows-label; ls -la /config/wine/dosdevices/'
 
+          # VNC connection works through the click-fix proxy
+          docker cp ci/rfb_check.py b3d:/tmp/rfb_check.py
+          docker exec -u 1000 b3d python3 /tmp/rfb_check.py
+          # Sharp scaling CSS installed
+          docker exec b3d grep -q "bryce3d: sharp scaling" /opt/noVNC/app/styles/base.css
+          # Windows are no longer forced full-screen by the window manager
+          sleep 5
+          geo=$(docker exec b3d sh -c 'DISPLAY=:0 xdotool search --onlyvisible --name Notepad getwindowgeometry --shell %@' | tr '\n' ' ')
+          echo "Notepad window: $geo"
+          echo "$geo" | grep -q "WIDTH=" 
+          if echo "$geo" | grep -q "WIDTH=640 HEIGHT=480"; then echo "window was maximized by the WM"; exit 1; fi
+          docker exec b3d sh -c 'reg=/config/wine/user.reg; grep -A2 "X11 Driver" $reg'
+
       - name: Push to GHCR
         if: github.event_name != 'pull_request'
         run: |
