@@ -11,7 +11,7 @@ part, so you can recolour all the carbons in Bryce with a single click.
 
 Usage:
   sdf2bryce.py molecule.sdf [-o OUTDIR] [--style spacefill|ballstick|sticks]
-                            [--quality low|medium|high] [--no-hydrogens]
+                            [--quality low|medium|high|ultra] [--no-hydrogens]
                             [--scale N] [--format 3ds,obj]
   sdf2bryce.py --watch DIR      convert every new/changed .sdf/.mol in DIR
 
@@ -48,10 +48,11 @@ VDW = {
 }
 DEFAULT_VDW = 1.8
 
-QUALITY = {  # (sphere longitude segments, latitude rings, cylinder sides)
-    "low": (10, 6, 6),
-    "medium": (16, 10, 10),
-    "high": (24, 14, 14),
+QUALITY = {  # (geodesic sphere subdivisions, cylinder sides); triangles per sphere = 20 * 4**n
+    "low": (2, 8),        #    320 triangles per atom
+    "medium": (3, 16),    #  1,280
+    "high": (4, 32),      #  5,120
+    "ultra": (5, 48),     # 20,480
 }
 
 
@@ -130,41 +131,58 @@ def norm_element(sym):
 
 
 # ---------------------------------------------------------------- mesh building
+_ICO_CACHE = {}
+
+
+def unit_icosphere(level):
+    """Geodesic sphere of radius 1: evenly sized triangles, no bunching at poles."""
+    if level in _ICO_CACHE:
+        return _ICO_CACHE[level]
+    t = (1 + math.sqrt(5)) / 2
+    verts = [unit(v) for v in [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
+                               (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
+                               (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]]
+    faces = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
+             (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8),
+             (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
+             (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
+    for _ in range(level):
+        mid, new = {}, []
+
+        def midpoint(a, b):
+            key = (a, b) if a < b else (b, a)
+            if key not in mid:
+                mid[key] = len(verts)
+                verts.append(unit(mul(add(verts[a], verts[b]), 0.5)))
+            return mid[key]
+
+        for a, b, c in faces:
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            new += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
+        faces = new
+    _ICO_CACHE[level] = (verts, faces)
+    return verts, faces
+
+
 class Mesh:
-    """Triangles grouped by element. parts[element] = (vertices, faces)."""
+    """Triangles grouped by element. parts[element] = (vertices, normals, faces)."""
 
     def __init__(self):
         self.parts = {}
 
     def part(self, element):
-        return self.parts.setdefault(element, ([], []))
+        return self.parts.setdefault(element, ([], [], []))
 
-    def sphere(self, element, center, radius, nlon, nlat):
-        verts, faces = self.part(element)
+    def sphere(self, element, center, radius, level):
+        verts, normals, faces = self.part(element)
         base = len(verts)
-        verts.append(add(center, (0, 0, radius)))                      # north pole
-        for i in range(1, nlat):
-            theta = math.pi * i / nlat
-            for j in range(nlon):
-                phi = 2 * math.pi * j / nlon
-                verts.append(add(center, (radius * math.sin(theta) * math.cos(phi),
-                                          radius * math.sin(theta) * math.sin(phi),
-                                          radius * math.cos(theta))))
-        verts.append(add(center, (0, 0, -radius)))                     # south pole
-        south = len(verts) - 1
-        ring = lambda i, j: base + 1 + (i - 1) * nlon + (j % nlon)
-        for j in range(nlon):
-            faces.append((base, ring(1, j), ring(1, j + 1)))
-            faces.append((south, ring(nlat - 1, j + 1), ring(nlat - 1, j)))
-        for i in range(1, nlat - 1):
-            for j in range(nlon):
-                a, b = ring(i, j), ring(i, j + 1)
-                c, d = ring(i + 1, j), ring(i + 1, j + 1)
-                faces.append((a, c, d))
-                faces.append((a, d, b))
+        uv, uf = unit_icosphere(level)
+        verts.extend(add(center, mul(v, radius)) for v in uv)
+        normals.extend(uv)                       # exact sphere normals -> smooth shading
+        faces.extend((a + base, b + base, c + base) for a, b, c in uf)
 
     def cylinder(self, element, p, q, radius, sides):
-        verts, faces = self.part(element)
+        verts, normals, faces = self.part(element)
         axis = sub(q, p)
         if norm(axis) < 1e-6:
             return
@@ -173,9 +191,11 @@ class Mesh:
         base = len(verts)
         for j in range(sides):
             ang = 2 * math.pi * j / sides
-            off = add(mul(u, radius * math.cos(ang)), mul(w, radius * math.sin(ang)))
+            dirn = add(mul(u, math.cos(ang)), mul(w, math.sin(ang)))
+            off = mul(dirn, radius)
             verts.append(add(p, off))
             verts.append(add(q, off))
+            normals.extend((dirn, dirn))
         for j in range(sides):
             a, b = base + 2 * j, base + 2 * j + 1
             c, d = base + 2 * ((j + 1) % sides), base + 2 * ((j + 1) % sides) + 1
@@ -184,7 +204,7 @@ class Mesh:
 
 
 def build(mol, style, quality, hydrogens, scale):
-    nlon, nlat, sides = QUALITY[quality]
+    level, sides = QUALITY[quality]
     keep = [hydrogens or el != "H" for el, _ in mol.atoms]
     # Centre the molecule on the origin.
     pts = [xyz for (el, xyz), k in zip(mol.atoms, keep) if k]
@@ -204,7 +224,7 @@ def build(mol, style, quality, hydrogens, scale):
             r = 0.16
         else:
             r = 0.25 * VDW.get(el, DEFAULT_VDW)
-        mesh.sphere(el, pos[i], r * scale, nlon, nlat)
+        mesh.sphere(el, pos[i], r * scale, level)
 
     if style != "spacefill":
         neighbours = {}
@@ -259,12 +279,12 @@ def write_obj(mesh, path, name):
     with open(path, "w", newline="\r\n") as f:
         f.write(f"# {name} - made by sdf2bryce\nmtllib {os.path.basename(mtl)}\n")
         offset = 1
-        for el, (verts, faces) in mesh.parts.items():
-            f.write(f"o {el}\ng {el}\nusemtl {el}\n")
-            for v in verts:
-                f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
-            for a, b, c in faces:
-                f.write(f"f {a + offset} {b + offset} {c + offset}\n")
+        for el, (verts, normals, faces) in mesh.parts.items():
+            f.write(f"o {el}\ng {el}\nusemtl {el}\ns 1\n")
+            f.write("".join(f"v {v[0]:.5f} {v[1]:.5f} {v[2]:.5f}\n" for v in verts))
+            f.write("".join(f"vn {n[0]:.5f} {n[1]:.5f} {n[2]:.5f}\n" for n in normals))
+            f.write("".join(f"f {a + offset}//{a + offset} {b + offset}//{b + offset} "
+                            f"{c + offset}//{c + offset}\n" for a, b, c in faces))
             offset += len(verts)
 
 
@@ -283,13 +303,14 @@ def write_3ds(mesh, path):
                                chunk(0xA020, chunk(0x0011, rgb)),
                                chunk(0xA030, chunk(0x0011, bytes((0x4C, 0x4C, 0x4C))))))
     objects = []
-    for el, (verts, faces) in mesh.parts.items():
-        # A 3DS mesh holds at most 65535 vertices: split big parts.
+    for el, (verts, _normals, faces) in mesh.parts.items():
+        # A 3DS mesh holds at most 65535 vertices and 65535 faces: split big parts.
         pieces, start = [], 0
         while start < len(faces):
             used, remap, out_f = [], {}, []
             i = start
-            while i < len(faces) and len(used) <= 65532:
+            # 3DS stores vertex and face counts as 16-bit numbers.
+            while i < len(faces) and len(used) <= 65532 and len(out_f) < 65535:
                 for v in faces[i]:
                     if v not in remap:
                         remap[v] = len(used)
@@ -317,7 +338,7 @@ def write_3ds(mesh, path):
 
 
 # ---------------------------------------------------------------- driver
-def convert(src, outdir=None, style="spacefill", quality="medium", hydrogens=True,
+def convert(src, outdir=None, style="spacefill", quality="high", hydrogens=True,
             scale=1.0, formats=("3ds", "obj")):
     mol = parse_sdf(src)
     flat = all(abs(xyz[2]) < 1e-4 for _, xyz in mol.atoms)
@@ -335,7 +356,7 @@ def convert(src, outdir=None, style="spacefill", quality="medium", hydrogens=Tru
     if "obj" in formats:
         write_obj(mesh, base + ".obj", mol.name)
         written += [base + ".obj", base + ".mtl"]
-    tris = sum(len(f) for _, f in mesh.parts.values())
+    tris = sum(len(f) for _, _, f in mesh.parts.values())
     counts = {}
     for el, _ in mol.atoms:
         if hydrogens or el != "H":
@@ -343,9 +364,9 @@ def convert(src, outdir=None, style="spacefill", quality="medium", hydrogens=Tru
     summary = ", ".join(f"{el}x{n}" for el, n in sorted(counts.items()))
     print(f"{os.path.basename(src)}: {summary}; {tris} triangles -> "
           + ", ".join(os.path.basename(w) for w in written))
-    if tris > 100_000:
-        print("  note: that is a lot for Bryce 3D; try --quality low or --no-hydrogens",
-              file=sys.stderr)
+    if tris > 400_000:
+        print("  note: that is a very heavy model for Bryce 3D; if importing is slow or fails, "
+              "try a lower --quality or --no-hydrogens", file=sys.stderr)
     return written
 
 
@@ -354,6 +375,22 @@ def watch(folder, **opts):
     os.makedirs(folder, exist_ok=True)
     print(f"watching {folder} for .sdf/.mol files", flush=True)
     failed = {}   # path -> mtime of the version that failed (retry once it changes)
+    sig_file = os.path.join(folder, ".sdf2bryce-settings")
+    sig = repr(sorted(opts.items())) + " v2"
+    try:
+        old_sig = open(sig_file).read()
+    except OSError:
+        old_sig = None
+    redo = set()
+    if old_sig != sig:
+        redo = {fn for fn in os.listdir(folder) if fn.lower().endswith((".sdf", ".mol"))}
+        if old_sig is not None and redo:
+            print("settings changed: re-converting all molecules", flush=True)
+        try:
+            with open(sig_file, "w") as f:
+                f.write(sig)
+        except OSError:
+            pass
     while True:
         for fn in sorted(os.listdir(folder)):
             if not fn.lower().endswith((".sdf", ".mol")):
@@ -361,11 +398,13 @@ def watch(folder, **opts):
             src = os.path.join(folder, fn)
             out = os.path.splitext(src)[0] + (".3ds" if "3ds" in opts["formats"] else ".obj")
             try:
-                if os.path.exists(out) and os.path.getmtime(out) >= os.path.getmtime(src):
+                if (fn not in redo and os.path.exists(out)
+                        and os.path.getmtime(out) >= os.path.getmtime(src)):
                     continue
                 mtime = os.path.getmtime(src)
                 if failed.get(src) == mtime or time.time() - mtime < 2:   # bad, or still copying
                     continue
+                redo.discard(fn)
                 convert(src, **opts)
             except Exception as e:  # keep watching even if one file is bad
                 print(f"{fn}: could not convert: {e}", file=sys.stderr, flush=True)
@@ -379,7 +418,7 @@ def main():
     ap.add_argument("files", nargs="*", help=".sdf or .mol files")
     ap.add_argument("-o", "--outdir", help="output folder (default: next to the input)")
     ap.add_argument("--style", choices=["spacefill", "ballstick", "sticks"], default="spacefill")
-    ap.add_argument("--quality", choices=list(QUALITY), default="medium")
+    ap.add_argument("--quality", choices=list(QUALITY), default="high")
     ap.add_argument("--no-hydrogens", action="store_true")
     ap.add_argument("--scale", type=float, default=1.0, help="model units per Angstrom")
     ap.add_argument("--format", default="3ds,obj", help="comma list: 3ds, obj")
