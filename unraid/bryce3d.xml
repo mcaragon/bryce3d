@@ -23,5 +23,7 @@
   <Config Name="Web password" Target="WEB_AUTHENTICATION" Default="0" Mode="" Description="Set to 1 and fill in the username/password below to require a login" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Web username" Target="WEB_AUTHENTICATION_USERNAME" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Web password value" Target="WEB_AUTHENTICATION_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="Sharp scaling" Target="SHARP_SCALING" Default="1" Mode="" Description="1 = crisp pixels when the browser scales the screen up, 0 = smooth (blurry)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Pop-up click fix" Target="CLICK_FIX" Default="1" Mode="" Description="1 = keep Bryce's preset pop-ups (Objects, Materials, Sky &amp; Fog) open on a normal click" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   <Config Name="TZ" Target="TZ" Default="Etc/UTC" Mode="" Description="Time zone" Type="Variable" Display="advanced" Required="false" Mask="false">Etc/UTC</Config>
 </Container>

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Sits between the web UI (nginx) and Xvnc. See /opt/bryce3d/rfb_click_proxy.py
+exec python3 /opt/bryce3d/rfb_click_proxy.py --listen /tmp/vnc.sock --target /tmp/vnc-x.sock

@@ -46,6 +46,9 @@ Then set *Repository* in the template to `bryce3d`.
 
 - **Screen size.** The default is 640×480, Bryce 3D's native 1997 layout. The browser scales it up to fit. Bryce arranges its palettes around a screen that size, so a larger screen leaves Bryce small and centered with empty space around it. To change it, set `DISPLAY_WIDTH` / `DISPLAY_HEIGHT` (e.g. 800×600), and enlarge the document via *File → Document Setup* to match.
 - **Where's the menu bar?** Bryce 3D hides its `File | Edit | Objects | Help` menu bar until you move the mouse to the very top edge of the screen, just as it did on Windows 95.
+- **Sharp scaling.** The browser scales the 640×480 screen up with crisp pixels, not blur. Set `SHARP_SCALING=0` for smooth scaling instead.
+- **Preset pop-ups.** Bryce opens its preset libraries (the arrows next to Create, Edit and Sky & Fog) when the button goes down and closes them when it comes up. On a modern machine they appear so fast that a normal click closes them again. A small proxy (`rootfs/opt/bryce3d/rfb_click_proxy.py`) sits between the web UI and the VNC server and turns a click on those arrows into a quick press and release, so the pop-up stays open. Set `CLICK_FIX=0` to turn it off. Note that port 5900 (raw VNC) connects directly and does not get this fix.
+- **Dialogs and palettes.** Bryce's palettes and dialogs are separate windows. The base image's window manager would normally stretch every window to full screen and push it to the back. This image turns that rule off, and also sets Wine's `UseTakeFocus=N` so dialogs receive keyboard input.
 - **Bryce render resolution.** Use *File → Document Setup*, then save a scene named `DEFAULT` in the Bryce folder so it opens at that size every time.
 - **Clipboard / file transfer.** Open the noVNC side panel (the arrow on the left edge). Exchanging files through the share (drive E:) is the easiest route.
 - **Password.** The UI has no login by default. Keep it on your LAN, or set `WEB_AUTHENTICATION=1` with a username and password. That also needs `SECURE_CONNECTION=1` (HTTPS) or `WEB_AUTHENTICATION_ALLOW_INSECURE=1`.
@@ -56,4 +59,4 @@ Then set *Repository* in the template to `bryce3d`.
 
 ## Credits
 
-The 640×480 plain-window setup and the hidden-menu-bar tip come from [RaymonDev/BryceDock](https://github.com/RaymonDev/BryceDock), another project that runs Bryce 3D in Docker.
+The 640×480 plain-window setup, the hidden-menu-bar tip and the idea and coordinates for the pop-up click fix come from [RaymonDev/BryceDock](https://github.com/RaymonDev/BryceDock), another project that runs Bryce 3D in Docker.

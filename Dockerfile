@@ -7,11 +7,20 @@ RUN dpkg --add-architecture i386 && \
     add-pkg \
         wine wine32 wine64 \
         p7zip-full unzip genisoimage \
-        x11-utils fonts-liberation procps xdotool
+        x11-utils fonts-liberation procps xdotool python3
 
 COPY rootfs/ /
 
-RUN chmod +x /startapp.sh && \
+# - Xvnc moves to /tmp/vnc-x.sock; the click-fix proxy takes over /tmp/vnc.sock
+#   (where the web UI connects) and relays to it.
+# - /etc/openbox/main-window-selection.xml: the base image maximizes,
+#   undecorates and buries every window matching it (by default every normal
+#   window). Bryce's palettes and dialogs are separate windows, so we make it
+#   match nothing.
+RUN sed -i 's#-rfbunixpath=/tmp/vnc.sock#-rfbunixpath=/tmp/vnc-x.sock#' /etc/services.d/xvnc/params && \
+    grep -q vnc-x.sock /etc/services.d/xvnc/params && \
+    ln -sf /defaults/service/sgid /etc/services.d/clickproxy/sgid && \
+    chmod +x /startapp.sh && \
     set-cont-env APP_NAME "Bryce 3D" && \
     set-cont-env APP_VERSION "3.0"
 
