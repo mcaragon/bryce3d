@@ -44,7 +44,8 @@ Then set *Repository* in the template to `bryce3d`.
 
 ## Tips
 
-- **Screen size.** Change `DISPLAY_WIDTH` / `DISPLAY_HEIGHT` in the template. Wine runs Bryce in a virtual desktop of exactly that size.
+- **Screen size.** The default is 640×480, Bryce 3D's native 1997 layout. The browser scales it up to fit. Bryce arranges its palettes around a screen that size, so a larger screen leaves Bryce small and centered with empty space around it. To change it, set `DISPLAY_WIDTH` / `DISPLAY_HEIGHT` (e.g. 800×600), and enlarge the document via *File → Document Setup* to match.
+- **Where's the menu bar?** Bryce 3D hides its `File | Edit | Objects | Help` menu bar until you move the mouse to the very top edge of the screen, just as it did on Windows 95.
 - **Bryce render resolution.** Use *File → Document Setup*, then save a scene named `DEFAULT` in the Bryce folder so it opens at that size every time.
 - **Clipboard / file transfer.** Open the noVNC side panel (the arrow on the left edge). Exchanging files through the share (drive E:) is the easiest route.
 - **Password.** The UI has no login by default. Keep it on your LAN, or set `WEB_AUTHENTICATION=1` with a username and password. That also needs `SECURE_CONNECTION=1` (HTTPS) or `WEB_AUTHENTICATION_ALLOW_INSECURE=1`.
@@ -52,3 +53,7 @@ Then set *Repository* in the template to `bryce3d`.
 - **Wrong exe started?** Set the `BRYCE_EXE` variable to the full Linux path of the executable, e.g. `/config/wine/drive_c/Program Files/.../Bryce 3D.exe`.
 - **Installer windows hidden?** Dialogs can get stuck behind the installer's full-screen background. List the open windows with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name .'` and bring one to the front with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name "^Welcome$" windowraise windowactivate'`.
 - **Logs.** In Unraid, use the container's *Logs* button. Lines from this setup start with `[bryce3d]`.
+
+## Credits
+
+The 640×480 plain-window setup and the hidden-menu-bar tip come from [RaymonDev/BryceDock](https://github.com/RaymonDev/BryceDock), another project that runs Bryce 3D in Docker.

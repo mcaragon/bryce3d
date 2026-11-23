@@ -123,5 +123,11 @@ fi
 
 log "Starting $exe"
 cd "$(dirname "$exe")"
-wine explorer /desktop="$DESKTOP" "$(winpath "$exe")"
+# Run Bryce as a plain window (like on a real PC), not inside a Wine virtual
+# desktop. BRYCE_DESKTOP=1 restores the virtual-desktop behaviour.
+if [ "${BRYCE_DESKTOP:-0}" = "1" ]; then
+    wine explorer /desktop="$DESKTOP" "$(winpath "$exe")"
+else
+    wine "$(winpath "$exe")"
+fi
 wsw

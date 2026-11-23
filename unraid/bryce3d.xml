@@ -18,8 +18,8 @@
   <Config Name="Storage share" Target="/storage" Default="/mnt/user/bryce3d" Mode="rw" Description="Put the Bryce ISO/zip here. Appears as drive E: inside Bryce for scenes and renders." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/bryce3d</Config>
   <Config Name="USER_ID" Target="USER_ID" Default="99" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
   <Config Name="GROUP_ID" Target="GROUP_ID" Default="100" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
-  <Config Name="Screen width" Target="DISPLAY_WIDTH" Default="1280" Mode="" Description="Width of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">1280</Config>
-  <Config Name="Screen height" Target="DISPLAY_HEIGHT" Default="960" Mode="" Description="Height of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">960</Config>
+  <Config Name="Screen width" Target="DISPLAY_WIDTH" Default="640" Mode="" Description="Width of the virtual screen. 640x480 is Bryce 3D's native layout; the browser scales it up." Type="Variable" Display="always" Required="false" Mask="false">640</Config>
+  <Config Name="Screen height" Target="DISPLAY_HEIGHT" Default="480" Mode="" Description="Height of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">480</Config>
   <Config Name="Web password" Target="WEB_AUTHENTICATION" Default="0" Mode="" Description="Set to 1 and fill in the username/password below to require a login" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Web username" Target="WEB_AUTHENTICATION_USERNAME" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Web password value" Target="WEB_AUTHENTICATION_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
