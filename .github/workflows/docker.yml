@@ -37,6 +37,7 @@ jobs:
             sleep 2
           done
           docker logs b3d 2>&1 | tail -40
+          docker exec b3d ps -ef || true
           docker logs b3d 2>&1 | grep -q "running installer"
           curl -fsS -o /dev/null http://localhost:5800/
           docker exec b3d sh -c 'cat /config/cdrom/.windows-label; ls -la /config/wine/dosdevices/'

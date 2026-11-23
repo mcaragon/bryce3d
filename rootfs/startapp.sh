@@ -7,6 +7,7 @@ export HOME=/config
 export WINEPREFIX=/config/wine
 export WINEARCH=win32
 export WINEDEBUG="${WINEDEBUG:--all}"
+export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-mscoree,mshtml=}"
 
 STORAGE=/storage
 CD=/config/cdrom
@@ -72,8 +73,11 @@ prepare_cd() {
 prepare_wine() {
     if [ ! -f "$WINEPREFIX/system.reg" ]; then
         log "Creating Wine prefix (first run, takes a minute) ..."
-        wine wineboot -i >/dev/null 2>&1
-        wsw
+        # WINEDLLOVERRIDES (set above) stops Wine popping up a blocking dialog
+        # offering to download Mono/Gecko, which Bryce doesn't need.
+        timeout 300 wine wineboot -i 2>&1 | tail -5
+        timeout 120 "$WINESERVER" -w
+        log "Wine prefix ready."
         # Windows 95-era app: report Windows 98.
         wine reg add 'HKCU\Software\Wine' /v Version /d win98 /f >/dev/null 2>&1
     fi
