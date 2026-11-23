@@ -64,9 +64,11 @@ jobs:
           docker exec b3d sh -c 'reg=/config/wine/user.reg; grep -A2 "X11 Driver" $reg'
           # Molecule converter turned the dropped SDF into Bryce-ready models
           for i in $(seq 1 30); do [ -s storage/molecules/caffeine.3ds ] && break; sleep 2; done
-          docker logs b3d 2>&1 | grep "molwatch" | tail -5
+          docker logs b3d 2>&1 | grep "molwatch" | tail -5 || true
           ls -la storage/molecules
-          test -s storage/molecules/caffeine.3ds && test -s storage/molecules/caffeine.obj && test -s storage/molecules/caffeine.mtl
+          for f in caffeine.3ds caffeine.obj caffeine.mtl; do
+            if [ ! -s "storage/molecules/$f" ]; then echo "molecule converter did not produce $f"; exit 1; fi
+          done
           docker exec b3d sdf2bryce --help | head -3
 
       - name: Push to GHCR
