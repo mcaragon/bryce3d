@@ -108,7 +108,14 @@ if [ -z "$exe" ]; then
     setup="$(find_setup "$CD")"
     log "Bryce not installed yet, running installer $setup"
     cd "$(dirname "$setup")"
-    wine explorer /desktop="$DESKTOP" "$(winpath "$setup")"
+    # No Wine virtual desktop for the installer: inside one, the InstallShield
+    # full-screen billboard stays on top and hides the "Welcome" dialog.
+    # As plain X windows, the window manager raises each new dialog.
+    if [ "${INSTALLER_DESKTOP:-0}" = "1" ]; then
+        wine explorer /desktop="$DESKTOP" "$(winpath "$setup")"
+    else
+        wine "$(winpath "$setup")"
+    fi
     wsw
     exe="$(find_bryce)"
     [ -z "$exe" ] && fail "installer finished but no Bryce executable was found. Press Retry to run the installer again."

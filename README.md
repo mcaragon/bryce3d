@@ -50,4 +50,5 @@ Then set *Repository* in the template to `bryce3d`.
 - **Password.** The UI has no login by default. Keep it on your LAN, or set `WEB_AUTHENTICATION=1` with a username and password. That also needs `SECURE_CONNECTION=1` (HTTPS) or `WEB_AUTHENTICATION_ALLOW_INSECURE=1`.
 - **Reinstall from scratch.** Stop the container and delete `/mnt/user/appdata/bryce3d/wine`. To use a different ISO, also delete `.../cdrom`.
 - **Wrong exe started?** Set the `BRYCE_EXE` variable to the full Linux path of the executable, e.g. `/config/wine/drive_c/Program Files/.../Bryce 3D.exe`.
+- **Installer windows hidden?** Dialogs can get stuck behind the installer's full-screen background. List the open windows with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name .'` and bring one to the front with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name "^Welcome$" windowraise windowactivate'`.
 - **Logs.** In Unraid, use the container's *Logs* button. Lines from this setup start with `[bryce3d]`.
