@@ -25,5 +25,9 @@
   <Config Name="Web password value" Target="WEB_AUTHENTICATION_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
   <Config Name="Sharp scaling" Target="SHARP_SCALING" Default="0" Mode="" Description="1 = blocky crisp pixels when the browser scales the screen (good for a small screen enlarged by whole multiples), 0 = smooth" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Pop-up click fix" Target="CLICK_FIX" Default="1" Mode="" Description="1 = keep Bryce's preset pop-ups (Objects, Materials, Sky &amp; Fog) open on a normal click" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Molecule converter" Target="MOLECULE_WATCH" Default="1" Mode="" Description="1 = convert .sdf/.mol files dropped into the share's 'molecules' folder into .3ds/.obj models for Bryce" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Molecule style" Target="MOLECULE_STYLE" Default="spacefill" Mode="" Description="spacefill (default), ballstick or sticks" Type="Variable" Display="advanced" Required="false" Mask="false">spacefill</Config>
+  <Config Name="Molecule quality" Target="MOLECULE_QUALITY" Default="medium" Mode="" Description="low, medium or high (sphere smoothness / polygon count)" Type="Variable" Display="advanced" Required="false" Mask="false">medium</Config>
+  <Config Name="Molecule hydrogens" Target="MOLECULE_HYDROGENS" Default="1" Mode="" Description="1 = include hydrogen atoms, 0 = leave them out" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   <Config Name="TZ" Target="TZ" Default="Etc/UTC" Mode="" Description="Time zone" Type="Variable" Display="advanced" Required="false" Mask="false">Etc/UTC</Config>
 </Container>

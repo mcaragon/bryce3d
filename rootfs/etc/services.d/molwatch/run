@@ -1,0 +1,11 @@
+#!/bin/sh
+# Converts .sdf/.mol files dropped into the share's "molecules" folder into
+# Bryce-ready .3ds/.obj models (see /opt/bryce3d/sdf2bryce.py).
+if [ "${MOLECULE_WATCH:-1}" != "1" ]; then
+    echo "molecule converter disabled (MOLECULE_WATCH=0)"
+    exec sleep infinity
+fi
+set -- --watch "${MOLECULE_DIR:-/storage/molecules}" \
+    --style "${MOLECULE_STYLE:-spacefill}" --quality "${MOLECULE_QUALITY:-medium}"
+[ "${MOLECULE_HYDROGENS:-1}" = "1" ] || set -- "$@" --no-hydrogens
+exec python3 -u /opt/bryce3d/sdf2bryce.py "$@"
