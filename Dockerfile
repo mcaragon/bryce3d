@@ -16,8 +16,8 @@ RUN chmod +x /startapp.sh && \
     set-cont-env APP_VERSION "3.0"
 
 ENV KEEP_APP_RUNNING=1 \
-    DISPLAY_WIDTH=1280 \
-    DISPLAY_HEIGHT=960 \
+    DISPLAY_WIDTH=640 \
+    DISPLAY_HEIGHT=480 \
     WINEDEBUG=-all
 
 # /config  -> Wine prefix + installed Bryce (Unraid appdata)
