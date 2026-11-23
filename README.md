@@ -58,6 +58,34 @@ Then set *Repository* in the template to `bryce3d`.
 - **Installer windows hidden?** Dialogs can get stuck behind the installer's full-screen background. List the open windows with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name .'` and bring one to the front with `docker exec bryce3d sh -c 'DISPLAY=:0 xdotool search --name "^Welcome$" windowraise windowactivate'`.
 - **Logs.** In Unraid, use the container's *Logs* button. Lines from this setup start with `[bryce3d]`.
 
+## Molecules from PubChem
+
+The container can turn PubChem structure files into colored, space-filling 3D models for Bryce:
+
+1. On the compound's PubChem page, go to *Download → 3D Conformer → SDF*. Use the **3D** file: a 2D file comes out flat.
+2. Copy the `.sdf` into a `molecules` folder in your `bryce3d` share, e.g. `\\UNRAID\bryce3d\molecules\`. The container creates the folder on start.
+3. Within a few seconds, `name.3ds`, `name.obj` and `name.mtl` appear next to it.
+4. In Bryce, use *File → Import Object* and open `E:\molecules\name.3ds`. If that doesn't keep the colors, try the `.obj`.
+
+Each atom is a sphere at its van der Waals size. Each element is a separate, named part with a standard CPK color: carbon gray, oxygen red, nitrogen blue, hydrogen white, and so on. If Bryce doesn't keep the colors, each element still arrives as one part. Select it and pick a color in the *Materials Lab*: that's one click per element, not one per atom.
+
+Template settings (under *Show more settings*):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MOLECULE_STYLE` | `spacefill` | `spacefill` (atoms at full van der Waals size), or `ballstick` / `sticks` if you ever want them |
+| `MOLECULE_QUALITY` | `medium` | `low`, `medium` or `high`: how smooth the spheres are. Bryce 3D is happiest under ~100k triangles. |
+| `MOLECULE_HYDROGENS` | `1` | `0` leaves hydrogen atoms out |
+| `MOLECULE_WATCH` | `1` | `0` turns the automatic converter off |
+
+To use other settings for one molecule, run the converter by hand. Paths are inside the container, and `/storage` is your share:
+
+```bash
+docker exec bryce3d sdf2bryce /storage/molecules/caffeine.sdf --quality high --no-hydrogens
+```
+
+`sdf2bryce --help` lists all the options. To redo a molecule automatically after changing the template settings, delete its `.3ds` (or touch the `.sdf`).
+
 ## Credits
 
 The 640×480 plain-window setup, the hidden-menu-bar tip and the idea and coordinates for the pop-up click fix come from [RaymonDev/BryceDock](https://github.com/RaymonDev/BryceDock), another project that runs Bryce 3D in Docker.

@@ -30,6 +30,7 @@ jobs:
           np=$(docker run --rm --entrypoint sh bryce3d:ci -c 'find / -path "*i386-windows/notepad.exe" 2>/dev/null | head -1')
           docker run --rm --entrypoint cat bryce3d:ci "$np" > cd/SETUP.EXE
           genisoimage -quiet -V BRYCE3D -o storage/Bryce3DCD.iso cd
+          mkdir -p storage/molecules && cp ci/molecules/caffeine.sdf storage/molecules/
           chmod -R a+rwX storage
           # seccomp=unconfined: Docker's default syscall filter breaks 32-bit Wine
           # ("wine: socket : Function not implemented").
@@ -61,6 +62,12 @@ jobs:
           echo "$geo" | grep -q "WIDTH=" 
           if echo "$geo" | grep -q "WIDTH=1024 HEIGHT=768"; then echo "window was maximized by the WM"; exit 1; fi
           docker exec b3d sh -c 'reg=/config/wine/user.reg; grep -A2 "X11 Driver" $reg'
+          # Molecule converter turned the dropped SDF into Bryce-ready models
+          for i in $(seq 1 30); do [ -s storage/molecules/caffeine.3ds ] && break; sleep 2; done
+          docker logs b3d 2>&1 | grep "molwatch" | tail -5
+          ls -la storage/molecules
+          test -s storage/molecules/caffeine.3ds && test -s storage/molecules/caffeine.obj && test -s storage/molecules/caffeine.mtl
+          docker exec b3d sdf2bryce --help | head -3
 
       - name: Push to GHCR
         if: github.event_name != 'pull_request'

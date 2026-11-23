@@ -1,0 +1,2 @@
+#!/bin/sh
+exec python3 /opt/bryce3d/sdf2bryce.py "$@"
