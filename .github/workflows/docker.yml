@@ -63,10 +63,11 @@ jobs:
           if echo "$geo" | grep -q "WIDTH=1024 HEIGHT=768"; then echo "window was maximized by the WM"; exit 1; fi
           docker exec b3d sh -c 'reg=/config/wine/user.reg; grep -A2 "X11 Driver" $reg'
           # Molecule converter turned the dropped SDF into Bryce-ready models
-          for i in $(seq 1 30); do [ -s storage/molecules/caffeine.3ds ] && break; sleep 2; done
+          for i in $(seq 1 30); do [ -s storage/molecules/caffeine-ballstick.3ds ] && break; sleep 2; done
           docker logs b3d 2>&1 | grep "molwatch" | tail -5 || true
           ls -la storage/molecules
-          for f in caffeine.3ds caffeine.obj caffeine.mtl; do
+          for f in caffeine-spacefill.3ds caffeine-spacefill.obj caffeine-spacefill.mtl \
+                   caffeine-ballstick.3ds caffeine-ballstick.obj caffeine-ballstick.mtl; do
             if [ ! -s "storage/molecules/$f" ]; then echo "molecule converter did not produce $f"; exit 1; fi
           done
           docker exec b3d sdf2bryce --help | head -3
