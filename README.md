@@ -67,7 +67,7 @@ The container can turn PubChem structure files into colored, space-filling 3D mo
 3. Within a few seconds, `name.3ds`, `name.obj` and `name.mtl` appear next to it.
 4. In Bryce, use *File → Import Object* and open `E:\molecules\name.3ds`. If that doesn't keep the colors, try the `.obj`.
 
-Each atom is a sphere at its van der Waals size. Each element is a separate, named part with a standard CPK color: carbon gray, oxygen red, nitrogen blue, hydrogen white, and so on. If Bryce doesn't keep the colors, each element still arrives as one part. Select it and pick a color in the *Materials Lab*: that's one click per element, not one per atom.
+Each atom is a sphere at its van der Waals size. Every molecule comes out in the same standard pose (see `MOLECULE_ORIENT` below). Import all of them in the same format, all `.3ds` or all `.obj`, because Bryce may treat the two formats' axes differently. Each element is a separate, named part with a standard CPK color: carbon gray, oxygen red, nitrogen blue, hydrogen white, and so on. If Bryce doesn't keep the colors, each element still arrives as one part. Select it and pick a color in the *Materials Lab*: that's one click per element, not one per atom.
 
 Template settings (under *Show more settings*):
 
@@ -75,6 +75,7 @@ Template settings (under *Show more settings*):
 |---|---|---|
 | `MOLECULE_STYLE` | `spacefill` | `spacefill` (atoms at full van der Waals size), or `ballstick` / `sticks` if you ever want them |
 | `MOLECULE_QUALITY` | `high` | How smooth the atoms are: `low` (320 triangles per atom), `medium` (1,280), `high` (5,120) or `ultra` (20,480). Atoms are geodesic spheres and the files carry smooth-shading data. At `high`, a 50-atom molecule is about 250k triangles; at `ultra`, about 1M. |
+| `MOLECULE_ORIENT` | `standard` | `standard` puts every molecule in the same pose: centred, longest side along X (left-right), next along Y (up), flattest side facing the camera along Z. It only rotates, never mirrors, so chirality is kept. `original` keeps the orientation from the PubChem file. |
 | `MOLECULE_HYDROGENS` | `1` | `0` leaves hydrogen atoms out |
 | `MOLECULE_WATCH` | `1` | `0` turns the automatic converter off |
 

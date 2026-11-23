@@ -6,6 +6,7 @@ if [ "${MOLECULE_WATCH:-1}" != "1" ]; then
     exec sleep infinity
 fi
 set -- --watch "${MOLECULE_DIR:-/storage/molecules}" \
-    --style "${MOLECULE_STYLE:-spacefill}" --quality "${MOLECULE_QUALITY:-high}"
+    --style "${MOLECULE_STYLE:-spacefill}" --quality "${MOLECULE_QUALITY:-high}" \
+    --orient "${MOLECULE_ORIENT:-standard}"
 [ "${MOLECULE_HYDROGENS:-1}" = "1" ] || set -- "$@" --no-hydrogens
 exec python3 -u /opt/bryce3d/sdf2bryce.py "$@"

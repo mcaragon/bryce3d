@@ -47,6 +47,13 @@ VDW = {
     "Mn": 2.05, "Cr": 2.06,
 }
 DEFAULT_VDW = 1.8
+MASS = {  # approximate atomic masses, used to find a molecule's main axes
+    "H": 1.0, "He": 4.0, "Li": 6.9, "B": 10.8, "C": 12.0, "N": 14.0, "O": 16.0, "F": 19.0,
+    "Na": 23.0, "Mg": 24.3, "Al": 27.0, "Si": 28.1, "P": 31.0, "S": 32.1, "Cl": 35.5,
+    "K": 39.1, "Ca": 40.1, "Cr": 52.0, "Mn": 54.9, "Fe": 55.8, "Co": 58.9, "Ni": 58.7,
+    "Cu": 63.5, "Zn": 65.4, "Se": 79.0, "Br": 79.9, "I": 126.9, "Pt": 195.1, "Au": 197.0,
+    "Hg": 200.6,
+}
 
 QUALITY = {  # (geodesic sphere subdivisions, cylinder sides); triangles per sphere = 20 * 4**n
     "low": (2, 8),        #    320 triangles per atom
@@ -71,6 +78,55 @@ def unit(a):
 def any_perpendicular(v):
     other = (1.0, 0.0, 0.0) if abs(v[0]) < 0.9 else (0.0, 1.0, 0.0)
     return unit(cross(v, other))
+
+
+def symmetric_eigen(m):
+    """Eigenvalues/vectors of a symmetric 3x3 matrix (Jacobi rotations), largest first."""
+    a = [row[:] for row in m]
+    v = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    for _ in range(100):
+        p, q = max(((0, 1), (0, 2), (1, 2)), key=lambda ij: abs(a[ij[0]][ij[1]]))
+        if abs(a[p][q]) < 1e-14:
+            break
+        theta = 0.5 * math.atan2(2 * a[p][q], a[q][q] - a[p][p])
+        c, sn = math.cos(theta), math.sin(theta)
+        for k in range(3):                      # A <- A J
+            akp, akq = a[k][p], a[k][q]
+            a[k][p], a[k][q] = c * akp - sn * akq, sn * akp + c * akq
+        for k in range(3):                      # A <- J^T A
+            apk, aqk = a[p][k], a[q][k]
+            a[p][k], a[q][k] = c * apk - sn * aqk, sn * apk + c * aqk
+        for k in range(3):                      # V <- V J
+            vkp, vkq = v[k][p], v[k][q]
+            v[k][p], v[k][q] = c * vkp - sn * vkq, sn * vkp + c * vkq
+    pairs = sorted(((a[i][i], (v[0][i], v[1][i], v[2][i])) for i in range(3)), reverse=True)
+    return [val for val, _ in pairs], [vec for _, vec in pairs]
+
+
+def standard_pose(points, masses):
+    """Rotate a molecule into a standard pose and return the new coordinates.
+
+    Longest extent -> X, next -> Y (Bryce's up axis), thinnest -> Z (towards the
+    camera). Mass-weighted, so hydrogens count little. Which end of each axis
+    points to + is fixed by the mass distribution (the side with the longer
+    "tail" of mass), so the same molecule always lands the same way round.
+    Only a rotation: never a mirror image (chirality is kept).
+    """
+    total = sum(masses)
+    center = tuple(sum(m * p[k] for p, m in zip(points, masses)) / total for k in range(3))
+    rel = [sub(p, center) for p in points]
+    cov = [[sum(m * r[i] * r[j] for r, m in zip(rel, masses)) for j in range(3)] for i in range(3)]
+    _, axes = symmetric_eigen(cov)
+    ax = []
+    for a in axes[:2]:
+        skew = sum(m * dot(r, a) ** 3 for r, m in zip(rel, masses))
+        if abs(skew) < 1e-6:                    # symmetric along this axis: use heaviest atom
+            heaviest = max(range(len(rel)), key=lambda i: (masses[i], -i))
+            skew = dot(rel[heaviest], a)
+        ax.append(a if skew >= 0 else mul(a, -1.0))
+    ax.append(unit(cross(ax[0], ax[1])))       # right-handed: a rotation, never a mirror
+    ax[1] = cross(ax[2], ax[0])
+    return [(dot(r, ax[0]), dot(r, ax[1]), dot(r, ax[2])) for r in rel]
 
 
 # ---------------------------------------------------------------- SDF parsing
@@ -203,15 +259,21 @@ class Mesh:
             faces.append((a, d, b))
 
 
-def build(mol, style, quality, hydrogens, scale):
+def build(mol, style, quality, hydrogens, scale, orient="standard"):
     level, sides = QUALITY[quality]
     keep = [hydrogens or el != "H" for el, _ in mol.atoms]
-    # Centre the molecule on the origin.
-    pts = [xyz for (el, xyz), k in zip(mol.atoms, keep) if k]
-    cx = sum(p[0] for p in pts) / len(pts)
-    cy = sum(p[1] for p in pts) / len(pts)
-    cz = sum(p[2] for p in pts) / len(pts)
-    pos = [mul(sub(xyz, (cx, cy, cz)), scale) for _, xyz in mol.atoms]
+    if orient == "standard" and len(mol.atoms) > 1:
+        # Same pose for every molecule, centred on its centre of mass.
+        coords = standard_pose([xyz for _, xyz in mol.atoms],
+                               [MASS.get(el, 12.0) for el, _ in mol.atoms])
+        pos = [mul(c, scale) for c in coords]
+    else:
+        # Keep the file's orientation; just centre the molecule on the origin.
+        pts = [xyz for (el, xyz), k in zip(mol.atoms, keep) if k]
+        cx = sum(p[0] for p in pts) / len(pts)
+        cy = sum(p[1] for p in pts) / len(pts)
+        cz = sum(p[2] for p in pts) / len(pts)
+        pos = [mul(sub(xyz, (cx, cy, cz)), scale) for _, xyz in mol.atoms]
 
     mesh = Mesh()
     bond_r = {"ballstick": 0.10, "sticks": 0.16, "spacefill": 0.0}[style] * scale
@@ -339,13 +401,13 @@ def write_3ds(mesh, path):
 
 # ---------------------------------------------------------------- driver
 def convert(src, outdir=None, style="spacefill", quality="high", hydrogens=True,
-            scale=1.0, formats=("3ds", "obj")):
+            scale=1.0, formats=("3ds", "obj"), orient="standard"):
     mol = parse_sdf(src)
     flat = all(abs(xyz[2]) < 1e-4 for _, xyz in mol.atoms)
     if mol.dims == "2D" or (mol.dims != "3D" and flat and len(mol.atoms) > 3):
         print(f"warning: {os.path.basename(src)} is flat (2D). On PubChem, download the "
               f"'3D Conformer' SDF for a real 3D shape.", file=sys.stderr)
-    mesh = build(mol, style, quality, hydrogens, scale)
+    mesh = build(mol, style, quality, hydrogens, scale, orient)
     outdir = outdir or os.path.dirname(os.path.abspath(src))
     os.makedirs(outdir, exist_ok=True)
     base = os.path.join(outdir, os.path.splitext(os.path.basename(src))[0])
@@ -422,10 +484,13 @@ def main():
     ap.add_argument("--no-hydrogens", action="store_true")
     ap.add_argument("--scale", type=float, default=1.0, help="model units per Angstrom")
     ap.add_argument("--format", default="3ds,obj", help="comma list: 3ds, obj")
+    ap.add_argument("--orient", choices=["standard", "original"], default="standard",
+                    help="standard: same pose for every molecule (longest side along X, "
+                         "thinnest towards the camera); original: as in the file")
     ap.add_argument("--watch", metavar="DIR", help="keep converting files dropped into DIR")
     a = ap.parse_args()
     opts = dict(outdir=a.outdir, style=a.style, quality=a.quality,
-                hydrogens=not a.no_hydrogens, scale=a.scale,
+                hydrogens=not a.no_hydrogens, scale=a.scale, orient=a.orient,
                 formats=tuple(f.strip().lower() for f in a.format.split(",")))
     if a.watch:
         opts.pop("outdir")
