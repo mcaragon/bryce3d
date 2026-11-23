@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>bryce3d</Name>
+  <Repository>ghcr.io/mcaragon/bryce3d:latest</Repository>
+  <Registry>https://github.com/mcaragon/bryce3d/pkgs/container/bryce3d</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Project>https://github.com/mcaragon/bryce3d</Project>
+  <Overview>Bryce 3D (1997) running under Wine, usable from a web browser via noVNC. Put the Bryce 3D CD .iso (or a .zip containing it) in the storage share; it is installed automatically on first start.</Overview>
+  <Category>Tools: MediaApp:Photos</Category>
+  <WebUI>http://[IP]:[PORT:5800]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/jlesage/docker-templates/master/jlesage/images/generic-app-icon.png</Icon>
+  <Config Name="Web UI" Target="5800" Default="5800" Mode="tcp" Description="Browser access (noVNC)" Type="Port" Display="always" Required="true" Mask="false">5800</Config>
+  <Config Name="VNC" Target="5900" Default="5900" Mode="tcp" Description="Optional raw VNC access" Type="Port" Display="advanced" Required="false" Mask="false">5900</Config>
+  <Config Name="Appdata" Target="/config" Default="/mnt/user/appdata/bryce3d" Mode="rw" Description="Wine prefix and installed Bryce" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/bryce3d</Config>
+  <Config Name="Storage share" Target="/storage" Default="/mnt/user/bryce3d" Mode="rw" Description="Put the Bryce ISO/zip here. Appears as drive E: inside Bryce for scenes and renders." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/bryce3d</Config>
+  <Config Name="USER_ID" Target="USER_ID" Default="99" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="GROUP_ID" Target="GROUP_ID" Default="100" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+  <Config Name="Screen width" Target="DISPLAY_WIDTH" Default="1280" Mode="" Description="Width of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">1280</Config>
+  <Config Name="Screen height" Target="DISPLAY_HEIGHT" Default="960" Mode="" Description="Height of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">960</Config>
+  <Config Name="Web password" Target="WEB_AUTHENTICATION" Default="0" Mode="" Description="Set to 1 and fill in the username/password below to require a login" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
+  <Config Name="Web username" Target="WEB_AUTHENTICATION_USERNAME" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Web password value" Target="WEB_AUTHENTICATION_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
+  <Config Name="TZ" Target="TZ" Default="Etc/UTC" Mode="" Description="Time zone" Type="Variable" Display="advanced" Required="false" Mask="false">Etc/UTC</Config>
+</Container>

@@ -1,0 +1,19 @@
+# Alternative to the Unraid template (e.g. `docker compose up -d` on any host).
+services:
+  bryce3d:
+    image: ghcr.io/mcaragon/bryce3d:latest
+    # build: .            # or build locally instead of pulling
+    container_name: bryce3d
+    ports:
+      - "5800:5800"       # web UI  -> http://SERVER:5800
+      - "5900:5900"       # optional raw VNC
+    environment:
+      - USER_ID=99        # Unraid "nobody"
+      - GROUP_ID=100      # Unraid "users"
+      - TZ=Etc/UTC
+      - DISPLAY_WIDTH=1280
+      - DISPLAY_HEIGHT=960
+    volumes:
+      - /mnt/user/appdata/bryce3d:/config
+      - /mnt/user/bryce3d:/storage
+    restart: unless-stopped
