@@ -6,6 +6,7 @@
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
+  <ExtraParams>--security-opt seccomp=unconfined</ExtraParams>
   <Project>https://github.com/mcaragon/bryce3d</Project>
   <Overview>Bryce 3D (1997) running under Wine, usable from a web browser via noVNC. Put the Bryce 3D CD .iso (or a .zip containing it) in the storage share; it is installed automatically on first start.</Overview>
   <Category>Tools: MediaApp:Photos</Category>
