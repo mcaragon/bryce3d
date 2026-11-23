@@ -60,20 +60,20 @@ Then set *Repository* in the template to `bryce3d`.
 
 ## Molecules from PubChem
 
-The container can turn PubChem structure files into colored, space-filling 3D models for Bryce:
+The container can turn PubChem structure files into colored 3D models for Bryce. By default it makes both a space-filling model and a ball-and-stick model of each molecule:
 
 1. On the compound's PubChem page, go to *Download → 3D Conformer → SDF*. Use the **3D** file: a 2D file comes out flat.
 2. Copy the `.sdf` into a `molecules` folder in your `bryce3d` share, e.g. `\\UNRAID\bryce3d\molecules\`. The container creates the folder on start.
-3. Within a few seconds, `name.3ds`, `name.obj` and `name.mtl` appear next to it.
-4. In Bryce, use *File → Import Object* and open `E:\molecules\name.3ds`. If that doesn't keep the colors, try the `.obj`.
+3. Within a few seconds, `name-spacefill.3ds` and `name-ballstick.3ds` appear next to it, each with matching `.obj` and `.mtl` files.
+4. In Bryce, use *File → Import Object* and open `E:\molecules\name-spacefill.3ds` or `E:\molecules\name-ballstick.3ds`. If that doesn't keep the colors, try the `.obj`.
 
-Each atom is a sphere at its van der Waals size. Every molecule comes out in the same standard pose (see `MOLECULE_ORIENT` below). Import all of them in the same format, all `.3ds` or all `.obj`, because Bryce may treat the two formats' axes differently. Each element is a separate, named part with a standard CPK color: carbon gray, oxygen red, nitrogen blue, hydrogen white, and so on. If Bryce doesn't keep the colors, each element still arrives as one part. Select it and pick a color in the *Materials Lab*: that's one click per element, not one per atom.
+In the space-filling model, each atom is a sphere at its van der Waals size. In the ball-and-stick model, atoms are a quarter of that size and bonds are sticks; double and triple bonds show as parallel sticks, and each half of a bond takes the color of the atom it touches. Both versions of a molecule come out in the same position, so they line up exactly. Every molecule comes out in the same standard pose (see `MOLECULE_ORIENT` below). Import all of them in the same format, all `.3ds` or all `.obj`, because Bryce may treat the two formats' axes differently. Each element is a separate, named part with a standard CPK color: carbon gray, oxygen red, nitrogen blue, hydrogen white, and so on. If Bryce doesn't keep the colors, each element still arrives as one part. Select it and pick a color in the *Materials Lab*: that's one click per element, not one per atom.
 
 Template settings (under *Show more settings*):
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MOLECULE_STYLE` | `spacefill` | `spacefill` (atoms at full van der Waals size), or `ballstick` / `sticks` if you ever want them |
+| `MOLECULE_STYLE` | `spacefill,ballstick` | Which models to make, comma-separated: `spacefill`, `ballstick` and/or `sticks`. With a single style, files have no suffix, e.g. `caffeine.3ds`. |
 | `MOLECULE_QUALITY` | `high` | How smooth the atoms are: `low` (320 triangles per atom), `medium` (1,280), `high` (5,120) or `ultra` (20,480). Atoms are geodesic spheres and the files carry smooth-shading data. At `high`, a 50-atom molecule is about 250k triangles; at `ultra`, about 1M. |
 | `MOLECULE_ORIENT` | `standard` | `standard` puts every molecule in the same pose: centred, longest side along X (left-right), next along Y (up), flattest side facing the camera along Z. It only rotates, never mirrors, so chirality is kept. `original` keeps the orientation from the PubChem file. |
 | `MOLECULE_HYDROGENS` | `1` | `0` leaves hydrogen atoms out |

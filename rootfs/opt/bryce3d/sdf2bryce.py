@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """sdf2bryce: turn a PubChem SDF/MOL file into a 3D model Bryce 3D can import.
 
-Writes a space-filling model (atoms at their van der Waals size; ball-and-stick
-and sticks are available too) as
+Writes a space-filling model (atoms at their van der Waals size) and a
+ball-and-stick model by default (a sticks style is available too), each as
   - <name>.3ds          3D Studio, one named object + material per element
   - <name>.obj/.mtl     Wavefront OBJ, one group + material per element
 Atoms use the standard CPK/Jmol colours. Each bond is split at its middle and
@@ -10,7 +10,7 @@ each half is coloured like the atom it touches. Every element becomes one
 part, so you can recolour all the carbons in Bryce with a single click.
 
 Usage:
-  sdf2bryce.py molecule.sdf [-o OUTDIR] [--style spacefill|ballstick|sticks]
+  sdf2bryce.py molecule.sdf [-o OUTDIR] [--style spacefill,ballstick,sticks]
                             [--quality low|medium|high|ultra] [--no-hydrogens]
                             [--scale N] [--format 3ds,obj]
   sdf2bryce.py --watch DIR      convert every new/changed .sdf/.mol in DIR
@@ -400,35 +400,60 @@ def write_3ds(mesh, path):
 
 
 # ---------------------------------------------------------------- driver
-def convert(src, outdir=None, style="spacefill", quality="high", hydrogens=True,
+STYLES = ("spacefill", "ballstick", "sticks")
+
+
+def parse_styles(style):
+    """'spacefill,ballstick' or a tuple -> tuple of valid style names."""
+    items = style.split(",") if isinstance(style, str) else list(style)
+    out = tuple(dict.fromkeys(x.strip().lower() for x in items if x.strip()))
+    bad = [x for x in out if x not in STYLES]
+    if bad or not out:
+        raise ValueError(f"unknown style {bad or style!r}; use {', '.join(STYLES)}")
+    return out
+
+
+def output_bases(src, outdir, styles):
+    """Output paths (without extension), one per style. With several styles each
+    file gets the style as a suffix, e.g. caffeine-ballstick.3ds."""
+    outdir = outdir or os.path.dirname(os.path.abspath(src))
+    base = os.path.join(outdir, os.path.splitext(os.path.basename(src))[0])
+    if len(styles) == 1:
+        return {styles[0]: base}
+    return {st: f"{base}-{st}" for st in styles}
+
+
+def convert(src, outdir=None, style="spacefill,ballstick", quality="high", hydrogens=True,
             scale=1.0, formats=("3ds", "obj"), orient="standard"):
+    styles = parse_styles(style)
     mol = parse_sdf(src)
     flat = all(abs(xyz[2]) < 1e-4 for _, xyz in mol.atoms)
     if mol.dims == "2D" or (mol.dims != "3D" and flat and len(mol.atoms) > 3):
         print(f"warning: {os.path.basename(src)} is flat (2D). On PubChem, download the "
               f"'3D Conformer' SDF for a real 3D shape.", file=sys.stderr)
-    mesh = build(mol, style, quality, hydrogens, scale, orient)
-    outdir = outdir or os.path.dirname(os.path.abspath(src))
-    os.makedirs(outdir, exist_ok=True)
-    base = os.path.join(outdir, os.path.splitext(os.path.basename(src))[0])
-    written = []
-    if "3ds" in formats:
-        write_3ds(mesh, base + ".3ds")
-        written.append(base + ".3ds")
-    if "obj" in formats:
-        write_obj(mesh, base + ".obj", mol.name)
-        written += [base + ".obj", base + ".mtl"]
-    tris = sum(len(f) for _, _, f in mesh.parts.values())
     counts = {}
     for el, _ in mol.atoms:
         if hydrogens or el != "H":
             counts[el] = counts.get(el, 0) + 1
     summary = ", ".join(f"{el}x{n}" for el, n in sorted(counts.items()))
-    print(f"{os.path.basename(src)}: {summary}; {tris} triangles -> "
-          + ", ".join(os.path.basename(w) for w in written))
-    if tris > 400_000:
-        print("  note: that is a very heavy model for Bryce 3D; if importing is slow or fails, "
-              "try a lower --quality or --no-hydrogens", file=sys.stderr)
+    written = []
+    for st, base in output_bases(src, outdir, styles).items():
+        mesh = build(mol, st, quality, hydrogens, scale, orient)
+        os.makedirs(os.path.dirname(base) or ".", exist_ok=True)
+        files = []
+        if "3ds" in formats:
+            write_3ds(mesh, base + ".3ds")
+            files.append(base + ".3ds")
+        if "obj" in formats:
+            write_obj(mesh, base + ".obj", mol.name)
+            files += [base + ".obj", base + ".mtl"]
+        tris = sum(len(f) for _, _, f in mesh.parts.values())
+        print(f"{os.path.basename(src)} [{st}]: {summary}; {tris} triangles -> "
+              + ", ".join(os.path.basename(w) for w in files))
+        if tris > 400_000:
+            print("  note: that is a very heavy model for Bryce 3D; if importing is slow or "
+                  "fails, try a lower --quality or --no-hydrogens", file=sys.stderr)
+        written += files
     return written
 
 
@@ -458,10 +483,11 @@ def watch(folder, **opts):
             if not fn.lower().endswith((".sdf", ".mol")):
                 continue
             src = os.path.join(folder, fn)
-            out = os.path.splitext(src)[0] + (".3ds" if "3ds" in opts["formats"] else ".obj")
+            ext = ".3ds" if "3ds" in opts["formats"] else ".obj"
+            outs = [b + ext for b in output_bases(src, None, parse_styles(opts["style"])).values()]
             try:
-                if (fn not in redo and os.path.exists(out)
-                        and os.path.getmtime(out) >= os.path.getmtime(src)):
+                if (fn not in redo and all(os.path.exists(o) for o in outs)
+                        and min(os.path.getmtime(o) for o in outs) >= os.path.getmtime(src)):
                     continue
                 mtime = os.path.getmtime(src)
                 if failed.get(src) == mtime or time.time() - mtime < 2:   # bad, or still copying
@@ -479,7 +505,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("files", nargs="*", help=".sdf or .mol files")
     ap.add_argument("-o", "--outdir", help="output folder (default: next to the input)")
-    ap.add_argument("--style", choices=["spacefill", "ballstick", "sticks"], default="spacefill")
+    ap.add_argument("--style", default="spacefill,ballstick",
+                    help="one or more of spacefill, ballstick, sticks (comma-separated). "
+                         "With several, each file gets the style as a suffix.")
     ap.add_argument("--quality", choices=list(QUALITY), default="high")
     ap.add_argument("--no-hydrogens", action="store_true")
     ap.add_argument("--scale", type=float, default=1.0, help="model units per Angstrom")
