@@ -74,17 +74,17 @@ Template settings (under *Show more settings*):
 | Variable | Default | Meaning |
 |---|---|---|
 | `MOLECULE_STYLE` | `spacefill` | `spacefill` (atoms at full van der Waals size), or `ballstick` / `sticks` if you ever want them |
-| `MOLECULE_QUALITY` | `medium` | `low`, `medium` or `high`: how smooth the spheres are. Bryce 3D is happiest under ~100k triangles. |
+| `MOLECULE_QUALITY` | `high` | How smooth the atoms are: `low` (320 triangles per atom), `medium` (1,280), `high` (5,120) or `ultra` (20,480). Atoms are geodesic spheres and the files carry smooth-shading data. At `high`, a 50-atom molecule is about 250k triangles; at `ultra`, about 1M. |
 | `MOLECULE_HYDROGENS` | `1` | `0` leaves hydrogen atoms out |
 | `MOLECULE_WATCH` | `1` | `0` turns the automatic converter off |
 
 To use other settings for one molecule, run the converter by hand. Paths are inside the container, and `/storage` is your share:
 
 ```bash
-docker exec bryce3d sdf2bryce /storage/molecules/caffeine.sdf --quality high --no-hydrogens
+docker exec bryce3d sdf2bryce /storage/molecules/caffeine.sdf --quality ultra
 ```
 
-`sdf2bryce --help` lists all the options. To redo a molecule automatically after changing the template settings, delete its `.3ds` (or touch the `.sdf`).
+`sdf2bryce --help` lists all the options. After you change the template settings and restart the container, every molecule in the folder is re-converted automatically. To redo just one, delete its `.3ds`.
 
 ## Credits
 
