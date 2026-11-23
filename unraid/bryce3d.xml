@@ -18,12 +18,12 @@
   <Config Name="Storage share" Target="/storage" Default="/mnt/user/bryce3d" Mode="rw" Description="Put the Bryce ISO/zip here. Appears as drive E: inside Bryce for scenes and renders." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/bryce3d</Config>
   <Config Name="USER_ID" Target="USER_ID" Default="99" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
   <Config Name="GROUP_ID" Target="GROUP_ID" Default="100" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
-  <Config Name="Screen width" Target="DISPLAY_WIDTH" Default="640" Mode="" Description="Width of the virtual screen. 640x480 is Bryce 3D's native layout; the browser scales it up." Type="Variable" Display="always" Required="false" Mask="false">640</Config>
-  <Config Name="Screen height" Target="DISPLAY_HEIGHT" Default="480" Mode="" Description="Height of the virtual screen" Type="Variable" Display="always" Required="false" Mask="false">480</Config>
+  <Config Name="Screen width" Target="DISPLAY_WIDTH" Default="1024" Mode="" Description="Width of Bryce's screen. Fixed: the browser shows it at real size and only shrinks it if the window is too small. 640x480, 800x600 or 1024x768 suit Bryce 3D." Type="Variable" Display="always" Required="false" Mask="false">1024</Config>
+  <Config Name="Screen height" Target="DISPLAY_HEIGHT" Default="768" Mode="" Description="Height of Bryce's screen" Type="Variable" Display="always" Required="false" Mask="false">768</Config>
   <Config Name="Web password" Target="WEB_AUTHENTICATION" Default="0" Mode="" Description="Set to 1 and fill in the username/password below to require a login" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Web username" Target="WEB_AUTHENTICATION_USERNAME" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Web password value" Target="WEB_AUTHENTICATION_PASSWORD" Default="" Mode="" Description="" Type="Variable" Display="advanced" Required="false" Mask="true"></Config>
-  <Config Name="Sharp scaling" Target="SHARP_SCALING" Default="1" Mode="" Description="1 = crisp pixels when the browser scales the screen up, 0 = smooth (blurry)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Sharp scaling" Target="SHARP_SCALING" Default="0" Mode="" Description="1 = blocky crisp pixels when the browser scales the screen (good for a small screen enlarged by whole multiples), 0 = smooth" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
   <Config Name="Pop-up click fix" Target="CLICK_FIX" Default="1" Mode="" Description="1 = keep Bryce's preset pop-ups (Objects, Materials, Sky &amp; Fog) open on a normal click" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   <Config Name="TZ" Target="TZ" Default="Etc/UTC" Mode="" Description="Time zone" Type="Variable" Display="advanced" Required="false" Mask="false">Etc/UTC</Config>
 </Container>

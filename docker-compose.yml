@@ -13,8 +13,8 @@ services:
       - USER_ID=99        # Unraid "nobody"
       - GROUP_ID=100      # Unraid "users"
       - TZ=Etc/UTC
-      - DISPLAY_WIDTH=640
-      - DISPLAY_HEIGHT=480
+      - DISPLAY_WIDTH=1024
+      - DISPLAY_HEIGHT=768
     volumes:
       - /mnt/user/appdata/bryce3d:/config
       - /mnt/user/bryce3d:/storage
