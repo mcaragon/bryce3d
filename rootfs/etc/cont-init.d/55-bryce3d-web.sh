@@ -3,7 +3,7 @@
 set -u
 CSS=/opt/noVNC/app/styles/base.css
 MARK="/* bryce3d: sharp scaling */"
-if [ "${SHARP_SCALING:-1}" = "1" ]; then
+if [ "${SHARP_SCALING:-0}" = "1" ]; then
     if ! grep -qF "$MARK" "$CSS"; then
         printf '\n%s\n#noVNC_container canvas { image-rendering: pixelated; image-rendering: crisp-edges; }\n' "$MARK" >> "$CSS"
     fi

@@ -50,13 +50,16 @@ jobs:
           docker cp ci/rfb_check.py b3d:/tmp/rfb_check.py
           docker exec -u 1000 b3d python3 /tmp/rfb_check.py
           # Sharp scaling CSS installed
-          docker exec b3d grep -q "bryce3d: sharp scaling" /opt/noVNC/app/styles/base.css
+          # Sharp scaling is opt-in (SHARP_SCALING=1)
+          ! docker exec b3d grep -q "bryce3d: sharp scaling" /opt/noVNC/app/styles/base.css || exit 1
+          # Xvnc refuses browser resize requests, so the screen stays fixed
+          docker exec b3d ps -eo args | grep Xvnc | grep -q -- "-AcceptSetDesktopSize=0"
           # Windows are no longer forced full-screen by the window manager
           sleep 5
           geo=$(docker exec b3d sh -c 'DISPLAY=:0 xdotool search --onlyvisible --name Notepad getwindowgeometry --shell %@' | tr '\n' ' ')
           echo "Notepad window: $geo"
           echo "$geo" | grep -q "WIDTH=" 
-          if echo "$geo" | grep -q "WIDTH=640 HEIGHT=480"; then echo "window was maximized by the WM"; exit 1; fi
+          if echo "$geo" | grep -q "WIDTH=1024 HEIGHT=768"; then echo "window was maximized by the WM"; exit 1; fi
           docker exec b3d sh -c 'reg=/config/wine/user.reg; grep -A2 "X11 Driver" $reg'
 
       - name: Push to GHCR
