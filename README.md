@@ -28,6 +28,8 @@ If Bryce is closed, it opens again on its own.
    wget -O /boot/config/plugins/dockerMan/templates-user/my-bryce3d.xml https://raw.githubusercontent.com/mcaragon/bryce3d/main/unraid/bryce3d.xml
    ```
    Then go to *Docker → Add Container → Template: bryce3d → Apply*. (A private repo needs the file copied manually instead.)
+
+   The template sets **Extra Parameters** to `--security-opt seccomp=unconfined`. Keep it. Docker's default system-call filter blocks something 32-bit Wine needs, and without it startup hangs at "Creating Wine prefix" with `wine: socket : Function not implemented` in the log. This setting turns off that filter for this one container only.
 4. **Install Bryce.** Open the WebUI (`http://UNRAID-IP:5800`). The installer appears after a minute or two on first run. Accept the defaults, and **type** the serial number by hand, because pasting doesn't work in that dialog. The serial is in the text file on the CD or zip, or on the archive.org item page.
 
 ### Building locally instead of pulling

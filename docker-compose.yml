@@ -4,6 +4,8 @@ services:
     image: ghcr.io/mcaragon/bryce3d:latest
     # build: .            # or build locally instead of pulling
     container_name: bryce3d
+    security_opt:
+      - seccomp=unconfined   # required: Docker's default syscall filter breaks 32-bit Wine
     ports:
       - "5800:5800"       # web UI  -> http://SERVER:5800
       - "5900:5900"       # optional raw VNC
