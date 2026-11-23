@@ -1,0 +1,49 @@
+name: Build image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bryce3d
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t bryce3d:ci .
+
+      - name: Smoke test (fake CD whose SETUP.EXE is Wine's notepad)
+        run: |
+          set -eux
+          sudo apt-get update -qq && sudo apt-get install -y -qq genisoimage
+          mkdir -p cd storage
+          np=$(docker run --rm --entrypoint sh bryce3d:ci -c 'find / -path "*i386-windows/notepad.exe" 2>/dev/null | head -1')
+          docker run --rm --entrypoint cat bryce3d:ci "$np" > cd/SETUP.EXE
+          genisoimage -quiet -V BRYCE3D -o storage/Bryce3DCD.iso cd
+          chmod -R a+rwX storage
+          docker run -d --name b3d -p 5800:5800 -v "$PWD/storage:/storage" bryce3d:ci
+          for i in $(seq 1 90); do
+            docker logs b3d 2>&1 | grep -q "running installer" && break
+            sleep 2
+          done
+          docker logs b3d 2>&1 | tail -40
+          docker logs b3d 2>&1 | grep -q "running installer"
+          curl -fsS -o /dev/null http://localhost:5800/
+          docker exec b3d sh -c 'cat /config/cdrom/.windows-label; ls -la /config/wine/dosdevices/'
+
+      - name: Push to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag bryce3d:ci "$IMAGE:latest"
+          docker push "$IMAGE:latest"
